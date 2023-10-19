@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using System;
 
 namespace Solar_System
@@ -10,55 +9,35 @@ namespace Solar_System
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private BasicEffect basicEffect;
         private Texture2D background;
 
         private float time = 0; // Czas w grze
-
-        private bool isBackgroundEnabled = true;
-        private bool isGridEnabled = true;
-
-        private BasicEffect basicEffect;
-        private Matrix world, view, proj;
-
         private float angleX = 0.0f, angleY = 0.0f;
-
-        private Vector3 mercuryPosition, venusPosition, earthPosition, moonPosition, marsPosition, jupiterPosition, saturnPosition, uranusPosition, neptunePosition;
-
-        private float sunRotationSpeed = 5.0f;
-        private float sunRotationAngle = 0f;
-
-        private float mercuryRotationSpeed = 1.0f;
-        private float mercuryRotationAngle = 0f;
-
-        private float venusRotationSpeed = 0.7f;
-        private float venusRotationAngle = 0f;
-
-        private float earthRotationSpeed = 0.5f;
-        private float earthRotationAngle = 0f;
-
-        private float moonRotationSpeed = 2.0f;
-        private float moonRotationAngle = 0f;
-
-        private float marsRotationSpeed = 0.4f;
-        private float marsRotationAngle = 0f;
-
-        private float jupiterRotationSpeed = 0.2f;
-        private float jupiterRotationAngle = 0f;
-
-        private float saturnRotationSpeed = 0.15f;
-        private float saturnRotationAngle = 0f;
-
-        private float uranusRotationSpeed = 0.1f;
-        private float uranusRotationAngle = 0f;
-
-        private float neptuneRotationSpeed = 0.08f;
-        private float neptuneRotationAngle = 0f;
 
         private float zoom = 1.0f;
         private float zoomSpeed = 0.02f;
+
+        private bool isBackgroundEnabled = true;        //Flagi dotyczące widoczności tła i siatki
+        private bool isGridEnabled = true;
+
+        private Matrix world, view, proj;
+        private Vector3 mercuryPosition, venusPosition, earthPosition, moonPosition, marsPosition, jupiterPosition, saturnPosition, uranusPosition, neptunePosition;
         private KeyboardState prevKeyboardState;  // Poprzedni stan klawiatury
         private VertexPositionColor[] userPrimitives;
+        
+        private float sunRotationSpeed = 5.0f, sunRotationAngle = 0f;
+        private float mercuryRotationSpeed = 1.0f, mercuryRotationAngle = 0f;
+        private float venusRotationSpeed = 0.7f, venusRotationAngle = 0f;
+        private float earthRotationSpeed = MathHelper.TwoPi / 1.0f, earthRotationAngle = 0f;
+        private float moonRotationSpeed = MathHelper.TwoPi / 29.4f, moonRotationAngle = 0f;
+        private float marsRotationSpeed = 0.4f, marsRotationAngle = 0f;
+        private float jupiterRotationSpeed = 0.2f, jupiterRotationAngle = 0f;
+        private float saturnRotationSpeed = 0.15f, saturnRotationAngle = 0f;
+        private float uranusRotationSpeed = 0.1f, uranusRotationAngle = 0f;
+        private float neptuneRotationSpeed = 0.08f, neptuneRotationAngle = 0f;
 
+        private int gridWidth = 14, gridHeight = 14, gridSizeX = 80, gridSizeY = 80;
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -69,7 +48,7 @@ namespace Solar_System
 
         protected override void Initialize()
         {
-            _graphics.PreferredBackBufferWidth = 1000;
+            _graphics.PreferredBackBufferWidth = 1200;
             _graphics.PreferredBackBufferHeight = 1000;
             _graphics.ApplyChanges();
             base.Initialize();
@@ -80,25 +59,14 @@ namespace Solar_System
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             background = Content.Load<Texture2D>("stars");
 
-            RasterizerState rs = new RasterizerState();
-            rs.CullMode = CullMode.None; // Ustawienie cull mode na None
-            GraphicsDevice.RasterizerState = rs;
-
-            int gridWidth = 14;
-            int gridHeight = 14;
-            int gridSizeX = 80;
-            int gridSizeY = 80;
-
             int numVertices = (gridSizeX + gridSizeY + 2) * 2;
             userPrimitives = new VertexPositionColor[numVertices];
 
             float spacingX = (float)gridWidth / gridSizeX;
             float spacingY = (float)gridHeight / gridSizeY;
-
             int vertexIndex = 0;
 
-            // Poziome linie
-            for (int i = 0; i <= gridSizeX; i++)
+            for (int i = 0; i <= gridSizeX; i++)            // Poziome linie siatki
             {
                 float x = -gridWidth / 2 + i * spacingX;
                 float yStart = -gridHeight / 2;
@@ -110,8 +78,7 @@ namespace Solar_System
                 vertexIndex++;
             }
 
-            // Pionowe linie
-            for (int i = 0; i <= gridSizeY; i++)
+            for (int i = 0; i <= gridSizeY; i++)            // Pionowe linie siatki
             {
                 float y = -gridHeight / 2 + i * spacingY;
                 float xStart = -gridWidth / 2;
@@ -129,9 +96,9 @@ namespace Solar_System
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
-
             KeyboardState keyboardState = Keyboard.GetState();
+
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
 
             if (keyboardState.IsKeyDown(Keys.B) && prevKeyboardState.IsKeyUp(Keys.B)) isBackgroundEnabled = !isBackgroundEnabled;
             if (keyboardState.IsKeyDown(Keys.X) && prevKeyboardState.IsKeyUp(Keys.X)) isGridEnabled = !isGridEnabled;
@@ -142,18 +109,12 @@ namespace Solar_System
             if (keyboardState.IsKeyDown(Keys.Up)) angleX += 0.02f;
             if (keyboardState.IsKeyDown(Keys.Down)) angleX -= 0.02f;
 
-            if (keyboardState.IsKeyDown(Keys.Q))
-            {
-                zoom += zoomSpeed;
-            }
+            if (keyboardState.IsKeyDown(Keys.Q)) zoom += zoomSpeed;
 
             if (keyboardState.IsKeyDown(Keys.A))
             {
                 zoom -= zoomSpeed;
-                if (zoom < 0.1f)
-                {
-                    zoom = 0.1f;
-                }
+                if (zoom < 0.1f) zoom = 0.1f;
             }
 
             world = Matrix.Identity;
@@ -166,13 +127,11 @@ namespace Solar_System
             basicEffect.Projection = proj;
 
             prevKeyboardState = keyboardState;
-
-
             time += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             // Obliczenia dla Merkurego
-            float mercuryOrbitRadius = 0.6f;
-            float mercuryOrbitSpeed = 0.1f;
+            float mercuryOrbitRadius = 0.6f;    //Wprowadzanie promienia orbity
+            float mercuryOrbitSpeed = 0.1f;     //Wprowadzanie prędkości obiegu
             float mercuryX = mercuryOrbitRadius * (float)Math.Cos(time * mercuryOrbitSpeed);
             float mercuryY = mercuryOrbitRadius * (float)Math.Sin(time * mercuryOrbitSpeed);
 
@@ -189,10 +148,10 @@ namespace Solar_System
             float earthY = earthOrbitRadius * (float)Math.Sin(time * earthOrbitSpeed);
 
             // Obliczenia dla Księżyca
-            float moonOrbitRadius = 0.1f; // Wybierz odpowiedni promień orbity
-            float moonOrbitSpeed = 0.2f;  // Wybierz odpowiednią prędkość obiegu
-            float moonX = earthPosition.X + moonOrbitRadius * (float)Math.Cos(time * moonOrbitSpeed);
-            float moonY = earthPosition.Y + moonOrbitRadius * (float)Math.Sin(time * moonOrbitSpeed);
+            float moonOrbitRadius = 0.1f; 
+            float moonOrbitSpeed = 0.2f;  
+            float moonX = earthX + moonOrbitRadius * (float)Math.Cos(time * moonOrbitSpeed);
+            float moonY = earthY + moonOrbitRadius * (float)Math.Sin(time * moonOrbitSpeed);
 
             // Obliczenia dla Marsa
             float marsOrbitRadius = 2.0f;
@@ -201,31 +160,30 @@ namespace Solar_System
             float marsY = marsOrbitRadius * (float)Math.Sin(time * marsOrbitSpeed);
 
             // Obliczenia dla Jowisza
-            float jupiterOrbitRadius = 3.0f; // Wybierz odpowiedni promień orbity
-            float jupiterOrbitSpeed = 0.01f;  // Wybierz odpowiednią prędkość obiegu
+            float jupiterOrbitRadius = 3.0f; 
+            float jupiterOrbitSpeed = 0.01f;  
             float jupiterX = jupiterOrbitRadius * (float)Math.Cos(time * jupiterOrbitSpeed);
             float jupiterY = jupiterOrbitRadius * (float)Math.Sin(time * jupiterOrbitSpeed);
 
             // Obliczenia dla Saturna
-            float saturnOrbitRadius = 4.0f; // Wybierz odpowiedni promień orbity
-            float saturnOrbitSpeed = 0.008f;  // Wybierz odpowiednią prędkość obiegu
+            float saturnOrbitRadius = 4.0f; 
+            float saturnOrbitSpeed = 0.008f;  
             float saturnX = saturnOrbitRadius * (float)Math.Cos(time * saturnOrbitSpeed);
             float saturnY = saturnOrbitRadius * (float)Math.Sin(time * saturnOrbitSpeed);
 
             // Obliczenia dla Urana
-            float uranusOrbitRadius = 5.0f; // Wybierz odpowiedni promień orbity
-            float uranusOrbitSpeed = 0.006f;  // Wybierz odpowiednią prędkość obiegu
+            float uranusOrbitRadius = 5.0f; 
+            float uranusOrbitSpeed = 0.006f;  
             float uranusX = uranusOrbitRadius * (float)Math.Cos(time * uranusOrbitSpeed);
             float uranusY = uranusOrbitRadius * (float)Math.Sin(time * uranusOrbitSpeed);
 
             // Obliczenia dla Neptuna
-            float neptuneOrbitRadius = 6.0f; // Wybierz odpowiedni promień orbity
-            float neptuneOrbitSpeed = 0.005f;  // Wybierz odpowiednią prędkość obiegu
+            float neptuneOrbitRadius = 6.0f; 
+            float neptuneOrbitSpeed = 0.005f;  
             float neptuneX = neptuneOrbitRadius * (float)Math.Cos(time * neptuneOrbitSpeed);
             float neptuneY = neptuneOrbitRadius * (float)Math.Sin(time * neptuneOrbitSpeed);
 
-            // Przypisanie nowych pozycji planet
-            mercuryPosition = new Vector3(mercuryX, mercuryY, 0f);
+            mercuryPosition = new Vector3(mercuryX, mercuryY, 0f);            // Przypisanie nowych pozycji planet
             venusPosition = new Vector3(venusX, venusY, 0f);
             earthPosition = new Vector3(earthX, earthY, 0f);
             moonPosition = new Vector3(moonX, moonY, 0f);
@@ -235,7 +193,7 @@ namespace Solar_System
             uranusPosition = new Vector3(uranusX, uranusY, 0f);
             neptunePosition = new Vector3(neptuneX, neptuneY, 0f);
 
-            sunRotationAngle = time * sunRotationSpeed;
+            sunRotationAngle = time * sunRotationSpeed;                 //Obliczanie obrotu
             mercuryRotationAngle = time * mercuryRotationSpeed;
             venusRotationAngle = time * venusRotationSpeed;
             earthRotationAngle = time * earthRotationSpeed;
@@ -245,7 +203,6 @@ namespace Solar_System
             saturnRotationAngle = time * saturnRotationSpeed;
             uranusRotationAngle = time * uranusRotationSpeed;
             neptuneRotationAngle = time * neptuneRotationSpeed;
-
 
             base.Update(gameTime);
         }
@@ -316,7 +273,7 @@ namespace Solar_System
             }
 
             RasterizerState rs = new RasterizerState();
-            rs.CullMode = CullMode.None; // Ustawienie cull mode na None
+            rs.CullMode = CullMode.None; // Ustawienie cull mode na None, aby było widać całe sześciany
             GraphicsDevice.RasterizerState = rs;
 
             basicEffect.CurrentTechnique.Passes[0].Apply();
